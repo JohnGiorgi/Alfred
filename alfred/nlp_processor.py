@@ -1,6 +1,3 @@
-# (IDEA) Try training a model on a large corpus. Then in place
-# of regex I could do something like model.most_common('')
-# https://github.com/RaRe-Technologies/gensim/blob/develop/docs/notebooks/word2vec.ipynb
 import re
 from nltk import tokenize
 

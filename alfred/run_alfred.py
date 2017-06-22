@@ -15,6 +15,7 @@ callers = {
     # "<number with country code>": "<name>"
     # and Alfred will call you by your name. Seperate entries by ',' to add
     # multiple callers
+    }
 
 ################################### SETUP ###################################
 # any steps to take when the script is first run are here
