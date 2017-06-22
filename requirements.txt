@@ -1,0 +1,7 @@
+flask
+twilio
+nltk
+phue
+pyowm
+wikipedia
+wolframalpha
