@@ -177,9 +177,8 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
     # Store default answer as error messae
     answer = ""
 
-    # look for keyword triggers
-
-
+    # Look for keyword triggers in the incoming SMS
+    
     ## WEATHER
     if re.search("weather", message) and pyowm_object != None:
         answer = weatherAction(message, processer, pyowm_object)

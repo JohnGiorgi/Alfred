@@ -27,8 +27,9 @@ a `conda` environment. The environment can be activated by calling `source activ
 ### Getting API Keys
 
 #### Weather
-Requests for weather information rely on the OpenWeatherMap.org API. Sign up [here](https://openweathermap.org/), then go to **API Keys** and copy your key to
+Requests for weather information rely on the OpenWeatherMap.org API. An API key is already provided with Alfred, but if you would prefer to use your own sign up [here](https://openweathermap.org/), then go to **API Keys** and copy your key to
 the config file (at `/main/resources/config.ini`).
+
 #### WolframAlpha
 Coming soon.
 
@@ -38,3 +39,10 @@ If you plan on using the script with the Philips Hue Bridge, there are a few ext
 1. Make sure that in `/main/resources/config.ini` you have set `bridgeIP` to the **IP** of your Bridge. Instructions on how to find that [here](https://developers.meethue.com/documentation/getting-started).
 2. Before running the script for the first time, press the button on the Hue Bridge. Then, within 30 seconds call the script and pass the `--connectBridge` flag (you only have to do this **once**).
 3. That's it. Try texting your Twilio number 'Turn on all the lights please!' to make sure things are working.
+
+### What can you ask Alfred to do?
+
+Example 1: "Turn on all the lights" <turns on all lights>
+Example 2: "Turn on the bedroom lights" <turns on all lights named bedroom, if they exist>
+Example 3: "Wiki Barack Obama" <returns wiki summary with link>
+Example 4: "What is the weather like in New York City?" <returns weather summary for location>
