@@ -9,14 +9,6 @@ from bin.testingAlfred import testing
 
 app = Flask(__name__)
 
-# dictionary containing callerID:name pairs.
-callers = {
-    # you can add your name and number here like so:
-    # "<number with country code>": "<name>"
-    # and Alfred will call you by your name. Seperate entries by ',' to add
-    # multiple callers
-    }
-
 ################################### SETUP ###################################
 # any steps to take when the script is first run are here
 print('[INFO] Setting up...')
@@ -60,8 +52,11 @@ def smsbot():
     """This method recieves the text and controls the response"""
     # create empy message string by default
     message = ""
-    # get the phone number request was sent from
+    # get the phone number, city and country request was sent from
     from_number = request.values.get('From', None)
+    from_city = request.values.get('FromCity', None)
+    from_country = request.values.get('FromCountry', None)
+    from_location = from_city + ", " + from_country
     # prepend custom message if number is recognized
     if from_number in callers:
         message = "Ok " + callers[from_number] + "\U0001f604\n\n"

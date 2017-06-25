@@ -2,8 +2,9 @@ import re
 import wikipedia
 
 # (TODO) Figure out a better way to connect with Bridge each time
+# (TODO) Use location of user somehow! https://www.twilio.com/docs/api/twiml/sms/twilio_request
 
-def lightsAction(message, philips_bridge):
+def lightsAction(message, processer, philips_bridge):
     """
     Makes the appropriate calls to the phue API for changing light settings
     based on message and generates a response.
@@ -47,6 +48,7 @@ def lightsAction(message, philips_bridge):
                 answer = "Setting {} lights to {}%...\U0001F4A1".format(', '.join(rooms), intensity)
         except:
             answer = 'Something went wrong while trying to change your lights brightness...'
+
     # 2) Turning lights off
     elif re.search("off", message):
         try:
@@ -60,10 +62,27 @@ def lightsAction(message, philips_bridge):
         try:
             for l in lights:
                 l.on = True
+                l.brightness = 254
             answer = "Turning {} lights on...\U0001F4A1".format(', '.join(rooms))
 
         except:
             answer = 'Something went wrong while trying to turn your lights on...'
+    '''
+    # 4) Change the lights color
+    else:
+        # tokenize
+        tokens = processer.tokenize(message)
+        # filter stopwords
+        tokens_filtered = processer.stopwordFilter(tokens, 'resources/data/stopwords.txt')
+        # join filtered message
+        message_filtered = ' '.join(tokens_filtered)
+        print("(Highly) processed input: ", message_filtered)
+        # find the mention of a color name
+        color = re.findall('\s*lights?\s*(\w+)', message_filtered)[0]
+        # convert this to a hex code
+        name_to_hex(color)
+    '''
+
 
     return answer
 def weatherAction(message, processer, pyowm_object):
@@ -78,7 +97,7 @@ def weatherAction(message, processer, pyowm_object):
     Returns:
         A message answering the weather query
     """
-    answer = "Something went wrong..."
+    answer = ""
     # tokenize input
     tokens = processer.tokenize(message)
     # filter stopwords
@@ -141,6 +160,7 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
 
     Args:
         message: An incoming text message
+        location: Location the request was sent from based on phone number
         processer: Instance of NLProcessor class
         philips_bridge: Instance of phue API bridge object
         pyowm_object: Instance of OWM API object
@@ -159,11 +179,9 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
 
     # look for keyword triggers
 
-    # LIGHTS
-    if re.search("lamps?|lights?", message) and philips_bridge != None:
-        answer = lightsAction(message, philips_bridge)
+
     ## WEATHER
-    elif re.search("weather", message) and pyowm_object != None:
+    if re.search("weather", message) and pyowm_object != None:
         answer = weatherAction(message, processer, pyowm_object)
     ## WOLFRAM
     elif "wolfram" in message:
@@ -171,6 +189,9 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
     ## WIKI
     elif re.search("wiki(pedia)?", message):
         answer = wikipediaAction(message, processer)
+    # LIGHTS
+    elif re.search("lamps?|lights?", message) and philips_bridge != None:
+        answer = lightsAction(message, processer, philips_bridge)
 
     # the message contains no keywords. Display a help prompt to identify
     # possible commands
