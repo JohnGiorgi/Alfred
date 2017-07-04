@@ -3,7 +3,50 @@ import wikipedia
 
 # (TODO) Figure out a better way to connect with Bridge each time
 # (TODO) Use location of user somehow! https://www.twilio.com/docs/api/twiml/sms/twilio_request
+# (TODO) make readme more like this (https://github.com/mtvg/August)
+def weatherAction(message, processer, pyowm_object):
+    """
+    Makes the appropriate calls to the OWM API to answer weather queries
 
+    Args:
+        message: An incoming text message
+        processer: Instance of NLProcessor class
+        pyowm_object: Instance of OWM API object
+
+    Returns:
+        A message answering the weather query
+    """
+    answer = ""
+    # tokenize input
+    tokens = processer.tokenize(message)
+    # filter stopwords
+    tokens_filtered = processer.stopwordFilter(tokens, 'resources/data/stopwords.txt')
+    # join filtered message
+    message_filtered = ' '.join(tokens_filtered)
+    print("(Highly) processed input: ", message_filtered)
+    # find the word that occurs after weather, looking for a city
+    location = re.findall('\s*weather\s*(\w+)', message_filtered)[0]
+    try:
+        # this object contains all the methods to get to the data
+        observation = pyowm_object.weather_at_place(location)
+        # get the weather object
+        w = observation.get_weather()
+        # get the location object
+        l = observation.get_location()
+        # store the data to return
+        city = l.get_name()
+        wind_speed = str(w.get_wind()['speed'])
+        temp = str(w.get_temperature('celsius')['temp'])
+        status = str(w.get_detailed_status())
+
+        answer = "{} in {}, with a temperature of {}C and winds {}km/h.".format(status, city, temp, wind_speed)
+
+    except:
+        # handle errors or non specificity errors
+        answer = "Request cannot be completed. Try 'weather Toronto, Canada'"
+
+
+    return answer
 def lightsAction(message, processer, philips_bridge):
     """
     Makes the appropriate calls to the phue API for changing light settings
@@ -26,9 +69,7 @@ def lightsAction(message, processer, philips_bridge):
     # look for room specific mentions in the sms. if mentioned name
     # exists on the bridge, set lights equal to light objects with this name
     rooms = []
-    for x in light_names:
-        if re.search(x, message):
-            rooms.append(x)
+    rooms = [name for name in light_names if re.search(name, message)]
     if len(rooms) != 0:
         lights = [l for l in lights if l.name.lower() in rooms]
 
@@ -38,6 +79,7 @@ def lightsAction(message, processer, philips_bridge):
         # if the word is dim is mentioned, set to 15%
         if (re.search('dim', message)):
             intensity = '15'
+        # else find the value that directly proceeds '%' or 'percent'
         else:
             intensity = re.findall('(\w+)\s*(%|percent)\s*', message)[0][0]
         try:
@@ -82,49 +124,6 @@ def lightsAction(message, processer, philips_bridge):
         # convert this to a hex code
         name_to_hex(color)
     '''
-
-
-    return answer
-def weatherAction(message, processer, pyowm_object):
-    """
-    Makes the appropriate calls to the OWM API for answer weather queries
-
-    Args:
-        message: An incoming text message
-        processer: Instance of NLProcessor class
-        pyowm_object: Instance of OWM API object
-
-    Returns:
-        A message answering the weather query
-    """
-    answer = ""
-    # tokenize input
-    tokens = processer.tokenize(message)
-    # filter stopwords
-    tokens_filtered = processer.stopwordFilter(tokens, 'resources/data/stopwords.txt')
-    # join filtered message
-    message_filtered = ' '.join(tokens_filtered)
-    print("(Highly) processed input: ", message_filtered)
-    # find the word that occurs after weather, looking for a city
-    location = re.findall('\s*weather\s*(\w+)', message_filtered)[0]
-    try:
-        # this object contains all the methods to get to the data
-        observation = pyowm_object.weather_at_place(location)
-        # get the weather object
-        w = observation.get_weather()
-        # get the location object
-        l = observation.get_location()
-        # store the data to return
-        city = l.get_name()
-        wind_speed = str(w.get_wind()['speed'])
-        temp = str(w.get_temperature('celsius')['temp'])
-        status = str(w.get_detailed_status())
-
-        answer = "{} in {}, with a temperature of {}C and winds {}km/h.".format(status, city, temp, wind_speed)
-
-    except:
-        # handle errors or non specificity errors
-        answer = "Request cannot be completed. Try 'weather Toronto, Canada'"
 
 
     return answer
@@ -178,7 +177,7 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
     answer = ""
 
     # Look for keyword triggers in the incoming SMS
-    
+
     ## WEATHER
     if re.search("weather", message) and pyowm_object != None:
         answer = weatherAction(message, processer, pyowm_object)
@@ -192,8 +191,7 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
     elif re.search("lamps?|lights?", message) and philips_bridge != None:
         answer = lightsAction(message, processer, philips_bridge)
 
-    # the message contains no keywords. Display a help prompt to identify
-    # possible commands
+    # the message contains no keywords. Display help prompt
     else:
         answer = '''\nStuck? Here are some things you can ask me:\n\n'wolfram' {a question}\n'wiki' {wikipedia request}\n'weather' {place}\n'turn lights off'\n\nNote: some of these features require additional setup '''
 

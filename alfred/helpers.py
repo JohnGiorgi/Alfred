@@ -1,5 +1,6 @@
 import configparser
 import argparse
+import sys
 
 def configurations(path):
     """Parses and reads the configuration file named found at path. Returns
@@ -18,7 +19,7 @@ def parse_args():
     arguments as an argparse object"""
 
     ## create parser
-    parser = argparse.ArgumentParser(description='''Run the Alfred, a simple
+    parser = argparse.ArgumentParser(description='''Run Alfred, a simple
     Flask app which recieves messages sent to a Twilio number and returns
     a response back to the sender. This app interacts with other APIs
     such as the Philips Hues API, WolframAlpha API, and OWM API in order
@@ -38,7 +39,10 @@ def parse_args():
     in order to run a testing loop which allows you to enter text to Alfred from the
     command line''', default = False)
 
-    ## parse arguments
-    arguments = parser.parse_args()
+    try:
+        arguments = parser.parse_args()
+    except:
+        parser.print_help()
+        sys.exit(0)
 
     return arguments

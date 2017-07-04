@@ -9,6 +9,11 @@ from bin.testingAlfred import testing
 
 app = Flask(__name__)
 
+# (TODO) Should not respond to numbers it does not recognize
+# (TODO) Should complete actions for all lights when room name is mentioned
+# (TODO) Complete action for one light when light name is mentioned
+# (TODO) Testing script should be unique
+
 ################################### SETUP ###################################
 # any steps to take when the script is first run are here
 print('[INFO] Setting up...')
