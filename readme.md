@@ -78,4 +78,4 @@ Coming soon.
 
 ## Changelog <a name = 'change-log'></a>
 
-**Latest commit**: Reorganized/simplified the directory structure of the project.
+**Latest commit**: Added the ability to set light colors. Try "Set bedroom lights green"

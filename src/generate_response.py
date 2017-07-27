@@ -116,22 +116,38 @@ def lightsAction(message, processer, philips_bridge):
         except:
             answer = 'Something went wrong while trying to turn your lights on...'
 
-    '''
+
     # 4) Change the lights color
+    # NOTE THIS IS A BIT OF A HACK, NEEDS TO BE IMPROVED
     else:
         # tokenize
         tokens = processer.tokenize(message)
         # filter stopwords
-        tokens_filtered = processer.stopwordFilter(tokens, 'resources/data/stopwords.txt')
+        tokens_filtered = processer.stopwordFilter(tokens, '../resources/stopwords.txt')
         # join filtered message
         message_filtered = ' '.join(tokens_filtered)
         print("(Highly) processed input: ", message_filtered)
         # find the mention of a color name
         color = re.findall('\s*lights?\s*(\w+)', message_filtered)[0]
-        print(color)
-        # convert this to a hex code
-        print(name_to_hex(color))
-    '''
+        # THIS IS A TEMPORARY HACK
+        colors = {
+            'blue': 40000,
+            'red': 100,
+            'green': 30000,
+            'orange': 4000,
+            'pink': 60000,
+            'purple': 50000
+        }
+        try:
+            for l in lights:
+                l.on = True
+                l.brightness = 254
+                l.hue = colors[color]
+            answer = "Turning {}lights {}...\U0001F4A1".format(mentioned_room, color)
+        except:
+            answer = 'Something went wrong while trying to change the color of yours lights...'
+
+    # return final answer
     return answer
 
 def wikipediaAction(message, processer):
@@ -196,7 +212,6 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
     # LIGHTS
     elif re.search("lamps?|lights?", message) and philips_bridge != None:
         answer = lightsAction(message, processer, philips_bridge)
-
     # the message contains no keywords. Display help prompt
     else:
         answer = '''\nStuck? Here are some things you can ask me:\n\n'wolfram' {a question}\n'wiki' {wikipedia request}\n'weather' {place}\n'turn lights off'\n\nNote: some of these features require additional setup '''
