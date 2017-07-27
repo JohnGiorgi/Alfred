@@ -5,6 +5,7 @@ from generate_response import get_reply
 from helpers import *
 from phue import Bridge
 import pyowm
+import sys
 from bin.testingAlfred import testing
 
 app = Flask(__name__)
@@ -22,6 +23,11 @@ callers = {
 print('[INFO] Setting up...')
 # parse and store command line arguments
 arguments = parse_args()
+# if setup flag is passed, run guided setup loop
+if arguments.setup:
+    setup_alfred()
+    # terminate script after setup
+    sys.exit
 # parse and store config file
 config = configurations(arguments.config)
 # initilize our NLProcessor object
@@ -56,6 +62,7 @@ else:
 # if test flag is passed, run a test loop
 if arguments.test:
     testing(processer, philips_bridge, owm)
+
 
 ### THE BOT
 @app.route("/", methods=['GET', 'POST'])
