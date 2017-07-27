@@ -82,6 +82,11 @@ def lightsAction(message, processer, philips_bridge):
     # use regex and cascading rules to determine action to take with lights
     # 1) Setting lights to a certain % intensity
     if re.search("%|percent|dim", message):
+        '''
+        Example text:
+            - 'dim bedroom lights'
+            - 'set lights to 50%'
+        '''
         # if the word is dim is mentioned, set to 15%
         if (re.search('dim', message)):
             intensity = '15'
@@ -99,6 +104,11 @@ def lightsAction(message, processer, philips_bridge):
 
     # 2) Turning lights off
     elif re.search("off", message):
+        '''
+        Example text:
+            - 'turn off the bedroom lights'
+            - 'turn off the lights'
+        '''
         try:
             for l in lights:
                 l.on = False
@@ -107,6 +117,11 @@ def lightsAction(message, processer, philips_bridge):
             answer = 'Something went wrong while trying to turn your lights off...'
     # 3) Turning lights on
     elif re.search("on", message):
+        '''
+        Example text:
+            - 'turn on the bedroom lights'
+            - 'turn on the lights'
+        '''
         try:
             for l in lights:
                 l.on = True
@@ -115,11 +130,38 @@ def lightsAction(message, processer, philips_bridge):
 
         except:
             answer = 'Something went wrong while trying to turn your lights on...'
+    # 4) Warming or cooling lights
+    elif re.search("warm|cool", message):
+        '''
+        Example text:
+            - 'Warm the bedroom lights'
+            - 'Cool the lights'
+        '''
+        warmOrCool = ''
+        # check if warm or cool was mentioned
+        if re.search('warm', message): warmOrCool = 'Warming'
+        elif re.search('cool', message): warmOrCool = 'Cooling'
+        # turn on and then warm or cool lights accordingly
+        try:
+            for l in lights:
+                l.on = True
+                # cool or warm lights
+                if warmOrCool == 'Warming':
+                    l.colortemp_k = 2000
+                elif warmOrCool == 'Cooling':
+                    l.colortemp_k = 6500
+            answer = "{} {}lights...\U0001F4A1".format(warmOrCool, mentioned_room)
+        except Exception as exception:
+            answer = 'Something went wrong while trying to warm or cool your lights...'
 
-
-    # 4) Change the lights color
+    # 5) Change the lights color
     # NOTE THIS IS A BIT OF A HACK, NEEDS TO BE IMPROVED
     else:
+        '''
+        Example text:
+            - 'Turn the lights blue'
+            - 'Turn the bedroom lights red'
+        '''
         # tokenize
         tokens = processer.tokenize(message)
         # filter stopwords
@@ -192,6 +234,7 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
         actions were taken
     """
 
+    # (TODO) add the ability in the config to switch on and off wiki and wolfram
     ## TEXT PREPROCESSING
     # lowercase, strip, and replace whitespace and newline characters with single space
     message = processer.simpleProcessor(message)

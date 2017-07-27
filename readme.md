@@ -73,9 +73,13 @@ Coming soon.
 - Example 2: "Turn on the bedroom lights" <turns on all lights in the Phillips hue group 'Bedroom', if this group exists>
 - Example 3: "Dim the living room lights" <sets all lights in the Phillips hue group 'Living room' to 15% intensity>
 - Example 4: "Set the lights to 50%" <sets all lights to 50% intensity>
-- Example 5: "Wiki Barack Obama" <returns wiki summary with link>
-- Example 6: "What is the weather like in New York City?" <returns weather summary for location>
+- Example 5: "Warm the bedroom lights" <sets all lights in the Phillips hue group 'Bedroom' to the warmest end of the spectrum>
+- Example 6: "Set the living room lights blue" <sets all lights in the Phillips hue group 'Living room' to blue>
+- Example 7: "Wiki Barack Obama" <returns wiki summary with link>
+- Example 8: "What is the weather like in New York City?" <returns weather summary for location>
 
 ## Changelog <a name = 'change-log'></a>
 
-**Latest commit**: Added the ability to set light colors. Try "Set bedroom lights green"
+**Latest commits**:
+- Added the ability to set light colors. Try "Set bedroom lights green"
+- Added two new command "Warm the lights" and "Cool the lights"
