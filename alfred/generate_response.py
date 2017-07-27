@@ -1,9 +1,12 @@
 import re
 import wikipedia
+from phue import Group
+# from webcolors import name_to_hex
 
 # (TODO) Figure out a better way to connect with Bridge each time
 # (TODO) Use location of user somehow! https://www.twilio.com/docs/api/twiml/sms/twilio_request
 # (TODO) make readme more like this (https://github.com/mtvg/August)
+
 def weatherAction(message, processer, pyowm_object):
     """
     Makes the appropriate calls to the OWM API to answer weather queries
@@ -40,13 +43,12 @@ def weatherAction(message, processer, pyowm_object):
         status = str(w.get_detailed_status())
 
         answer = "{} in {}, with a temperature of {}C and winds {}km/h.".format(status, city, temp, wind_speed)
-
     except:
         # handle errors or non specificity errors
         answer = "Request cannot be completed. Try 'weather Toronto, Canada'"
 
-
     return answer
+
 def lightsAction(message, processer, philips_bridge):
     """
     Makes the appropriate calls to the phue API for changing light settings
@@ -59,21 +61,25 @@ def lightsAction(message, processer, philips_bridge):
     Returns:
         A message indicating what action was taking with the phue API
     """
+    # set default answer to an error message
     answer = "Something went wrong..."
-    # use regex and cascading grammer
     # by default, set lights to all lights
     lights = philips_bridge.lights
     # get the names of all lights
     light_names = [l.name.lower() for l in lights]
+    # get the name of all rooms (Phillips calls these groups)
+    groups = philips_bridge.get_group()
+    room_names = [groups[key]['name'] for key in groups]
 
-    # look for room specific mentions in the sms. if mentioned name
-    # exists on the bridge, set lights equal to light objects with this name
-    rooms = []
-    rooms = [name for name in light_names if re.search(name, message)]
-    if len(rooms) != 0:
-        lights = [l for l in lights if l.name.lower() in rooms]
+    # look for room-specific mentions in the sms. If room name mentioned
+    # set lights equal to all lights in this group
+    mentioned_room = ''
+    for room in room_names:
+        if re.search(room.lower(), message):
+            mentioned_room = room.lower() + ' '
+            lights = Group(philips_bridge, room).lights
 
-    # determine what action to take with the lights
+    # use regex and cascading rules to determine action to take with lights
     # 1) Setting lights to a certain % intensity
     if re.search("%|percent|dim", message):
         # if the word is dim is mentioned, set to 15%
@@ -87,8 +93,8 @@ def lightsAction(message, processer, philips_bridge):
                 l.on = True
                 # normalize % intensity to a value between 0-254
                 l.brightness = int(int(intensity)/100*254)
-                answer = "Setting {} lights to {}%...\U0001F4A1".format(', '.join(rooms), intensity)
-        except:
+                answer = "Setting {}lights to {}%...\U0001F4A1".format(mentioned_room, intensity)
+        except Exception as exception:
             answer = 'Something went wrong while trying to change your lights brightness...'
 
     # 2) Turning lights off
@@ -96,8 +102,8 @@ def lightsAction(message, processer, philips_bridge):
         try:
             for l in lights:
                 l.on = False
-            answer = "Turning {} lights off...\U0001F4A1".format(', '.join(rooms))
-        except:
+            answer = "Turning {}lights off...\U0001F4A1".format(mentioned_room)
+        except Exception as exception:
             answer = 'Something went wrong while trying to turn your lights off...'
     # 3) Turning lights on
     elif re.search("on", message):
@@ -105,10 +111,11 @@ def lightsAction(message, processer, philips_bridge):
             for l in lights:
                 l.on = True
                 l.brightness = 254
-            answer = "Turning {} lights on...\U0001F4A1".format(', '.join(rooms))
+            answer = "Turning {}lights on...\U0001F4A1".format(mentioned_room)
 
         except:
             answer = 'Something went wrong while trying to turn your lights on...'
+
     '''
     # 4) Change the lights color
     else:
@@ -121,12 +128,12 @@ def lightsAction(message, processer, philips_bridge):
         print("(Highly) processed input: ", message_filtered)
         # find the mention of a color name
         color = re.findall('\s*lights?\s*(\w+)', message_filtered)[0]
+        print(color)
         # convert this to a hex code
-        name_to_hex(color)
+        print(name_to_hex(color))
     '''
-
-
     return answer
+
 def wikipediaAction(message, processer):
     answer = "Something went wrong..."
     # tokenize input
@@ -177,7 +184,6 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
     answer = ""
 
     # Look for keyword triggers in the incoming SMS
-
     ## WEATHER
     if re.search("weather", message) and pyowm_object != None:
         answer = weatherAction(message, processer, pyowm_object)

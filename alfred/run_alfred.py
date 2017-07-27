@@ -9,6 +9,10 @@ from bin.testingAlfred import testing
 
 app = Flask(__name__)
 
+# add <number>:<name> key pair values to have Alfred respond using your name
+callers = {
+}
+
 # (TODO) Should not respond to numbers it does not recognize
 # (TODO) Should complete actions for all lights when room name is mentioned
 # (TODO) Complete action for one light when light name is mentioned
@@ -33,9 +37,12 @@ if hue_config['bridgeIP'] != 'None':
     philips_bridge = Bridge(hue_config['bridgeIP'])
     # warn user about connect process with hub
     if arguments.connectBridge:
-        print('''[INFO] Make sure you have pressed the button on the Hue Bridge
-        within 30 seconds of running this script...\n''')
-        philips_bridge.connect()
+        philips_bridge = Bridge()
+        print("""
+        [INFO] Make sure you have pressed the button on the Hue Bridge within 30
+        seconds of running this script...\n
+        [INFO] Your bridge ip is {}
+        """.format(philips_bridge.get_ip_address()))
 else:
     philips_bridge = None
 ## WEATHER

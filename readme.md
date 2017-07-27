@@ -40,9 +40,16 @@ If you plan on using the script with the Philips Hue Bridge, there are a few ext
 2. Before running the script for the first time, press the button on the Hue Bridge. Then, within 30 seconds call the script and pass the `--connectBridge` flag (you only have to do this **once**).
 3. That's it. Try texting your Twilio number 'Turn on all the lights please!' to make sure things are working.
 
-### What can you ask Alfred to do?
+## What can you ask Alfred to do?
 
-Example 1: "Turn on all the lights" <turns on all lights>
-Example 2: "Turn on the bedroom lights" <turns on all lights named bedroom, if they exist>
-Example 3: "Wiki Barack Obama" <returns wiki summary with link>
-Example 4: "What is the weather like in New York City?" <returns weather summary for location>
+Example 1: "Turn on the lights" <turns on all lights>
+Example 2: "Turn on the bedroom lights" <turns on all lights in the Phillips hue group 'Bedroom', if this group exists>
+Example 3: "Dim the living room lights" <sets all lights in the Phillips hue group 'Living room' to 15% intensity>
+Example 4: "Set the lights to 50%" <sets all lights to 50% intensity>
+Example 5: "Wiki Barack Obama" <returns wiki summary with link>
+Example 6: "What is the weather like in New York City?" <returns weather summary for location>
+
+## Changelog
+
+- 1.0: Initial commit
+- 1.0.1: Changed how Alfred deals with rooms (Phillips hue calls these 'Groups'). If a group name that is present on your bridge is mentioned in the SMS sent to Alfred, then all actions occur to lights in this group. E.g. "Turn lights on in the bedroom" turns on all lights in the group 'Bedroom' (case-insensitive)
