@@ -23,7 +23,7 @@ def weatherAction(message, processer, pyowm_object):
     # tokenize input
     tokens = processer.tokenize(message)
     # filter stopwords
-    tokens_filtered = processer.stopwordFilter(tokens, 'resources/data/stopwords.txt')
+    tokens_filtered = processer.stopwordFilter(tokens, '../resources/stopwords.txt')
     # join filtered message
     message_filtered = ' '.join(tokens_filtered)
     print("(Highly) processed input: ", message_filtered)

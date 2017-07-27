@@ -29,7 +29,7 @@ def parse_args():
     # --config
     parser.add_argument('--config', metavar = '<configuration file>',
     type = str, help = '''Enter the path to the configuration file. Default is
-    at /main/resources/config.ini''', default = 'resources/config.ini')
+    at src/config.ini''', default = 'config.ini')
     # --connectBridge
     parser.add_argument('--connectBridge', action = 'store_true', help = '''If
     you intend to use the script with you Hue Bridge, set this to True when you
