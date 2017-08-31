@@ -4,6 +4,70 @@ import sys
 import os
 from phue import Bridge
 import time
+from nlp_processor import NLProcessor
+from phue import Bridge
+import pyowm
+import sys
+from bin.testingAlfred import testing
+
+def initial_setup():
+    """Initial setup to be called when Alfred Flask app is run"""
+
+    # (TODO) Should not respond to numbers it does not recognize
+    # (TODO) Complete action for one light when light name is mentioned
+    # (TODO) Testing script should be unique
+
+    # add <number>:<name> key pair values to have Alfred respond using your name
+    callers = {
+    }
+
+    print('[INFO] Setting up...')
+
+    # parse and store command line arguments
+    arguments = parse_args()
+
+    # if setup flag is passed, run guided setup loop
+    if arguments.setup:
+        guided_setup()
+        # terminate script after setup
+        sys.exit
+
+    # parse and store config file
+    config = configurations(arguments.config)
+
+    # initilize our NLProcessor object
+    print('[INFO] Initilizing NL Processor...')
+    processer = NLProcessor()
+
+    ## PHILIPS HUE
+    hue_config = config['lights']
+    if hue_config['bridgeIP'] != 'None':
+        # create the Bridge object with correct IP
+        print('[INFO] Connecting to Philips Hue Bridge with IP {}...'.format(hue_config['bridgeIP']))
+        philips_bridge = Bridge(hue_config['bridgeIP'])
+        # warn user about connect process with hub
+        if arguments.connectBridge:
+            philips_bridge = Bridge()
+            print("""
+            [INFO] Make sure you have pressed the button on the Hue Bridge within 30
+            seconds of running this script...\n
+            [INFO] Your bridge ip is {}
+            """.format(philips_bridge.get_ip_address()))
+    else:
+        philips_bridge = None
+
+    ## WEATHER
+    weather_config = config['weather']
+    if weather_config['OWMKey'] != 'None':
+        print('[INFO] Setting up pyowm with API key {}...'.format(weather_config['OWMKey']))
+        owm = pyowm.OWM(weather_config['OWMKey'])
+    else:
+        owm = None
+
+    ## TESTING
+    # if test flag is passed, run a test loop
+    if arguments.test:
+        testing(processer, philips_bridge, owm)
 
 def configurations(path):
     """Parses and reads the configuration file named found at path. Returns
@@ -53,7 +117,7 @@ def parse_args():
 
     return arguments
 
-def setup_alfred():
+def guided_setup():
     # (TODO): Need to update the config file with the bridgeIP
     # (TODO): Need to fix formatting
     # (TODO): Blinking is not working as expected
