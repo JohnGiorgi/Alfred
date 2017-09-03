@@ -1,5 +1,6 @@
 flask
 twilio
+spacy
 nltk
 phue
 pyowm

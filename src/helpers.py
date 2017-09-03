@@ -4,7 +4,6 @@ import sys
 import os
 from phue import Bridge
 import time
-from nlp_processor import NLProcessor
 from phue import Bridge
 import pyowm
 import sys
@@ -26,6 +25,7 @@ def initial_setup():
     # parse and store command line arguments
     arguments = parse_args()
 
+    ## SETUP
     # if setup flag is passed, run guided setup loop
     if arguments.setup:
         guided_setup()
@@ -67,18 +67,15 @@ def initial_setup():
     ## TESTING
     # if test flag is passed, run a test loop
     if arguments.test:
-        testing(processer, philips_bridge, owm)
-
+        testing(philips_bridge, owm)
 def configurations(path):
     """Parses and reads the configuration file named found at path. Returns
-    a configparser Object"""
+    a configparser Object."""
     # create config parsing object
     config = configparser.ConfigParser()
     # read config
     config.read(path)
-
     return config
-
 def parse_args():
     """
     This method creates an ArgumentParser object, creates and defines all
@@ -116,7 +113,6 @@ def parse_args():
         sys.exit(0)
 
     return arguments
-
 def guided_setup():
     # (TODO): Need to update the config file with the bridgeIP
     # (TODO): Need to fix formatting

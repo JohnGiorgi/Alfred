@@ -1,15 +1,48 @@
 import re
 import wikipedia
 from phue import Group
+from nltk import tokenize
+from nltk.corpus import stopwords
 # from webcolors import name_to_hex
 
 # (TODO) Figure out a better way to connect with Bridge each time
 # (TODO) Use location of user somehow! https://www.twilio.com/docs/api/twiml/sms/twilio_request
-# (TODO) make readme more like this (https://github.com/mtvg/August)
+# (TODO) Ditch using my own NLP processor and use spacy!
 
-def weatherAction(message, processer, pyowm_object):
+def sterilize(text):
+    """Sterilize input text. Remove proceeding and preeceding spaces, lowercase,
+    and replace spans of multiple spaces with a single space.
+
+    Args:
+        text: text to sterilize
+
+    Returns:
+        sterilized message
     """
-    Makes the appropriate calls to the OWM API to answer weather queries
+    return re.sub('\s+', ' ', text.lower().strip())
+def remove_stopwords(tokens, stopwords):
+    """
+    Returns a list of all words in tokens not found in stopwords
+
+    Args:
+        tokens: tokens to remove stopwords from
+        stopwords: path to a stopwords text file. Expects each word on its own line
+
+    Returns:
+        lst with stopwords removed
+    """
+    filtered_list = []
+
+    with open(stopwords, 'r') as f:
+        stopwords_list = [x.strip() for x in f.readlines()]
+        # use a set, lookup is quicker
+        stopwords_set = set(stopwords_list)
+        for word in tokens:
+            if word not in stopwords_set:
+                filtered_list.append(word)
+    return filtered_list
+def weatherAction(message, pyowm_object):
+    """Makes the appropriate calls to the OWM API to answer weather queries.
 
     Args:
         message: An incoming text message
@@ -19,14 +52,16 @@ def weatherAction(message, processer, pyowm_object):
     Returns:
         A message answering the weather query
     """
-    answer = ""
     # tokenize input
-    tokens = processer.tokenize(message)
+    tokens = tokenize.wordpunct_tokenize(message)
     # filter stopwords
-    tokens_filtered = processer.stopwordFilter(tokens, '../resources/stopwords.txt')
+    tokens_filtered = remove_stopwords(tokens, '../resources/stopwords.txt')
     # join filtered message
     message_filtered = ' '.join(tokens_filtered)
+
+    # for debugging/testing
     print("(Highly) processed input: ", message_filtered)
+
     # find the word that occurs after weather, looking for a city
     location = re.findall('\s*weather\s*(\w+)', message_filtered)[0]
     try:
@@ -42,16 +77,13 @@ def weatherAction(message, processer, pyowm_object):
         temp = str(w.get_temperature('celsius')['temp'])
         status = str(w.get_detailed_status())
 
-        answer = "{} in {}, with a temperature of {}C and winds {}km/h.".format(status, city, temp, wind_speed)
+        answer = '{} in {}, with a temperature of {}C and winds {}km/h.'.format(status, city, temp, wind_speed)
     except:
-        # handle errors or non specificity errors
+        # handle all errors with one error message
         answer = "Request cannot be completed. Try 'weather Toronto, Canada'"
-
     return answer
-
-def lightsAction(message, processer, philips_bridge):
-    """
-    Makes the appropriate calls to the phue API for changing light settings
+def lightsAction(message, philips_bridge):
+    """Makes the appropriate calls to the phue API for changing light settings
     based on message and generates a response.
 
     Args:
@@ -61,13 +93,13 @@ def lightsAction(message, processer, philips_bridge):
     Returns:
         A message indicating what action was taking with the phue API
     """
-    # set default answer to an error message
+    # set default answer to error message
     answer = "Something went wrong..."
     # by default, set lights to all lights
     lights = philips_bridge.lights
     # get the names of all lights
     light_names = [l.name.lower() for l in lights]
-    # get the name of all rooms (Phillips calls these groups)
+    # get the name of all rooms (Hue calls these 'groups')
     groups = philips_bridge.get_group()
     room_names = [groups[key]['name'] for key in groups]
 
@@ -99,7 +131,7 @@ def lightsAction(message, processer, philips_bridge):
                 # normalize % intensity to a value between 0-254
                 l.brightness = int(int(intensity)/100*254)
                 answer = "Setting {}lights to {}%...\U0001F4A1".format(mentioned_room, intensity)
-        except Exception as exception:
+        except:
             answer = 'Something went wrong while trying to change your lights brightness...'
 
     # 2) Turning lights off
@@ -113,7 +145,7 @@ def lightsAction(message, processer, philips_bridge):
             for l in lights:
                 l.on = False
             answer = "Turning {}lights off...\U0001F4A1".format(mentioned_room)
-        except Exception as exception:
+        except:
             answer = 'Something went wrong while trying to turn your lights off...'
     # 3) Turning lights on
     elif re.search("on", message):
@@ -148,8 +180,12 @@ def lightsAction(message, processer, philips_bridge):
                 # cool or warm lights
                 if warmOrCool == 'Warming':
                     l.colortemp_k = 2000
+                    # additionaly set lights to 60% brightness
+                    l.brightness = 152
                 elif warmOrCool == 'Cooling':
                     l.colortemp_k = 6500
+                    # additionaly set lights to 80% brightness
+                    l.brightness = 254
             answer = "{} {}lights...\U0001F4A1".format(warmOrCool, mentioned_room)
         except Exception as exception:
             answer = 'Something went wrong while trying to warm or cool your lights...'
@@ -163,9 +199,9 @@ def lightsAction(message, processer, philips_bridge):
             - 'Turn the bedroom lights red'
         '''
         # tokenize
-        tokens = processer.tokenize(message)
+        tokens = tokenize.wordpunct_tokenize(message)
         # filter stopwords
-        tokens_filtered = processer.stopwordFilter(tokens, '../resources/stopwords.txt')
+        tokens_filtered = remove_stopwords(tokens, '../resources/stopwords.txt')
         # join filtered message
         message_filtered = ' '.join(tokens_filtered)
         print("(Highly) processed input: ", message_filtered)
@@ -184,6 +220,8 @@ def lightsAction(message, processer, philips_bridge):
             for l in lights:
                 l.on = True
                 l.brightness = 254
+                # this is necessary to reproduce colours accurately
+                l.colortemp_k = 2000
                 l.hue = colors[color]
             answer = "Turning {}lights {}...\U0001F4A1".format(mentioned_room, color)
         except:
@@ -191,19 +229,27 @@ def lightsAction(message, processer, philips_bridge):
 
     # return final answer
     return answer
+def wikipediaAction(message):
+    """Makes the appropriate calls to the wikipedia API for answer wiki queries.
 
-def wikipediaAction(message, processer):
-    answer = "Something went wrong..."
+    Args:
+        message: An incoming text message
+        processer: Instance of NLProcessor class
+
+    Returns:
+        A message indicating what action was taking with the wikipedia API
+    """
     # tokenize input
-    tokens = processer.tokenize(message)
-    # filter stopwords
-    tokens_filtered = processer.stopwordFilter(tokens, 'resources/data/stopwords.txt')
+    tokens = tokenize.wordpunct_tokenize(message)
+    # filter stopwords, additionally, remove 'wiki' or 'wikipedia'
+    tokens_filtered = remove_stopwords(tokens, '../resources/stopwords.txt')
+    tokens_filtered = [token for token in tokens_filtered if token != 'wiki' and token != 'wikipedia']
     # join filtered message
     message = ' '.join(tokens_filtered)
-    # remove the keyword "wiki(pedia)?" from the message
-    message = message.replace("wikipedia", "")
-    message = message.replace("wiki", "")
+
+    # for debugging/testing
     print("(Highly) processed input: ", message)
+
     # Get the wikipedia summary for the request
     try:
         summary = wikipedia.summary(message, sentences = 1)
@@ -212,12 +258,11 @@ def wikipediaAction(message, processer):
         if len(answer) > 500:
             answer = answer[0:500] + "\nSee wikipedia for more..."
     except:
-        # handle errors or non specificity errors (ex: there are many people named donald)
+        # handle all errors
         answer = "Request was not found using Wikipedia. Be more specific?"
 
     return answer
-
-def get_reply(message, processer, philips_bridge, pyowm_object):
+def get_reply(message, philips_bridge, pyowm_object):
     """
     This method processes an incoming SMS and makes calls to the appropriate
     APIs via other methods.
@@ -233,31 +278,31 @@ def get_reply(message, processer, philips_bridge, pyowm_object):
         A response to message either answering a request or indicating what
         actions were taken
     """
-
-    # (TODO) add the ability in the config to switch on and off wiki and wolfram
     ## TEXT PREPROCESSING
-    # lowercase, strip, and replace whitespace and newline characters with single space
-    message = processer.simpleProcessor(message)
+    message = sterilize(message)
     print("(Simply) processed input: ", message)
-    # Store default answer as error messae
-    answer = ""
 
     # Look for keyword triggers in the incoming SMS
     ## WEATHER
-    if re.search("weather", message) and pyowm_object != None:
-        answer = weatherAction(message, processer, pyowm_object)
+    if re.search("weather", message):
+        if pyowm_object != None:
+            answer = weatherAction(message, pyowm_object)
+        else:
+            answer = "Hmm. It looks like I haven't been setup to answer weather requests. Take a look at the config.ini file!"
     ## WOLFRAM
     elif "wolfram" in message:
         answer = "get a response from the Wolfram Alpha API"
     ## WIKI
     elif re.search("wiki(pedia)?", message):
-        answer = wikipediaAction(message, processer)
+        answer = wikipediaAction(message)
     # LIGHTS
-    elif re.search("lamps?|lights?", message) and philips_bridge != None:
-        answer = lightsAction(message, processer, philips_bridge)
+    elif re.search("lamps?|lights?", message):
+        if philips_bridge != None:
+            answer = lightsAction(message, philips_bridge)
+        else:
+            answer = "Hmm. It looks like I haven't been setup to work with your Hue lights. Take a look at the config.ini file!"
     # the message contains no keywords. Display help prompt
     else:
-        answer = '''\nStuck? Here are some things you can ask me:\n\n'wolfram' {a question}\n'wiki' {wikipedia request}\n'weather' {place}\n'turn lights off'\n\nNote: some of these features require additional setup '''
-
+        answer = '''\nStuck? Here are some things you can ask me:\n\n'wolfram' {a question}\n'wiki' {wikipedia request}\n'weather' {place}\n'turn lights off'\n\nNote: some of these features require additional setup.'''
     # return the formulated answer
     return answer
