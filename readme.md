@@ -1,7 +1,6 @@
 # Alfred
 
-A simple Flask app written in Python. Incoming SMS sent to your Twilio phone number are routed to the app,
-which intelligently generates a response (SMS to the sender) and an action (ex: turning off the lights in your home).
+Alfred is a Python application built using the web-framework [Flask](https://github.com/pallets/flask/). Inbound SMS sent to your Twilio phone number are forwarded to Alfred as a HTTP request. Alfred intelligently generates a response (SMS to the sender via a HTTP POST request to Twilio) and an action (e.g.: turning off the lights in your home).
 
 ### Table of Contents
 1. [Setup](#setup)
