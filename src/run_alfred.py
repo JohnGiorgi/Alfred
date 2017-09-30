@@ -23,7 +23,7 @@ def smsbot():
     # get the body of the incoming sms
     message_body = request.form['Body']
     # send this to get_reply which calls appropriate API's
-    alfreds_response = get_reply(message_body, philips_bridge, owm)
+    alfreds_response = get_reply(message_body, philips_bridge, owm, wolfram)
 
     return str(MessagingResponse().message(alfreds_response))
 

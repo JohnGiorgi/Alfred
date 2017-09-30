@@ -262,7 +262,7 @@ def wikipediaAction(message):
         answer = "Request was not found using Wikipedia. Be more specific?"
 
     return answer
-def get_reply(message, philips_bridge, pyowm_object):
+def get_reply(message, philips_bridge, pyowm_object, wolfram_object):
     """
     This method processes an incoming SMS and makes calls to the appropriate
     APIs via other methods.
@@ -290,8 +290,11 @@ def get_reply(message, philips_bridge, pyowm_object):
         else:
             answer = "Hmm. It looks like I haven't been setup to answer weather requests. Take a look at the config.ini file!"
     ## WOLFRAM
-    elif "wolfram" in message:
-        answer = "get a response from the Wolfram Alpha API"
+    elif re.search("wolfram", message):
+        if wolfram_object != None:
+            answer = wolframAction(message)
+        else:
+            answer = "Hmm. It looks like I haven't been setup to answer Wolfram requests. Take a look at the config.ini file!"
     ## WIKI
     elif re.search("wiki(pedia)?", message):
         answer = wikipediaAction(message)

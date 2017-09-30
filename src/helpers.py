@@ -35,10 +35,6 @@ def initial_setup():
     # parse and store config file
     config = configurations(arguments.config)
 
-    # initilize our NLProcessor object
-    print('[INFO] Initilizing NL Processor...')
-    processer = NLProcessor()
-
     ## PHILIPS HUE
     hue_config = config['lights']
     if hue_config['bridgeIP'] != 'None':
@@ -55,6 +51,8 @@ def initial_setup():
             """.format(philips_bridge.get_ip_address()))
     else:
         philips_bridge = None
+    ## WOLFRAM TODO
+    wolfram = None
 
     ## WEATHER
     weather_config = config['weather']
@@ -67,7 +65,7 @@ def initial_setup():
     ## TESTING
     # if test flag is passed, run a test loop
     if arguments.test:
-        testing(philips_bridge, owm)
+        testing(philips_bridge, owm, wolfram)
 def configurations(path):
     """Parses and reads the configuration file named found at path. Returns
     a configparser Object."""
