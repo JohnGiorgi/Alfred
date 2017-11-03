@@ -51,6 +51,7 @@ def initial_setup():
             """.format(philips_bridge.get_ip_address()))
     else:
         philips_bridge = None
+
     ## WOLFRAM TODO
     wolfram = None
 
@@ -66,6 +67,9 @@ def initial_setup():
     # if test flag is passed, run a test loop
     if arguments.test:
         testing(philips_bridge, owm, wolfram)
+
+    return philips_bridge, owm, wolfram
+
 def configurations(path):
     """Parses and reads the configuration file named found at path. Returns
     a configparser Object."""
@@ -74,6 +78,7 @@ def configurations(path):
     # read config
     config.read(path)
     return config
+
 def parse_args():
     """
     This method creates an ArgumentParser object, creates and defines all
