@@ -1,12 +1,10 @@
-import configparser
-import argparse
 import sys
-import os
-from phue import Bridge
 import time
-from phue import Bridge
 import pyowm
-import sys
+import argparse
+import configparser
+
+from phue import Bridge
 from bin.testingAlfred import testing
 
 def initial_setup():
@@ -17,8 +15,7 @@ def initial_setup():
     # (TODO) Testing script should be unique
 
     # add <number>:<name> key pair values to have Alfred respond using your name
-    callers = {
-    }
+    # callers = {}
 
     print('[INFO] Setting up...')
 
@@ -45,8 +42,8 @@ def initial_setup():
         if arguments.connectBridge:
             philips_bridge = Bridge()
             print("""
-            [INFO] Make sure you have pressed the button on the Hue Bridge within 30
-            seconds of running this script...\n
+            [INFO] Make sure you have pressed the button on the Hue Bridge
+            within 30 seconds of running this script...\n
             [INFO] Your bridge ip is {}
             """.format(philips_bridge.get_ip_address()))
     else:
@@ -116,6 +113,7 @@ def parse_args():
         sys.exit(0)
 
     return arguments
+
 def guided_setup():
     # (TODO): Need to update the config file with the bridgeIP
     # (TODO): Need to fix formatting

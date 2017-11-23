@@ -1,46 +1,15 @@
 import re
 import wikipedia
+
 from phue import Group
 from nltk import tokenize
-from nltk.corpus import stopwords
+from process_input import *
 # from webcolors import name_to_hex
 
 # (TODO) Figure out a better way to connect with Bridge each time
 # (TODO) Use location of user somehow! https://www.twilio.com/docs/api/twiml/sms/twilio_request
 # (TODO) Ditch using my own NLP processor and use spacy!
 
-def sterilize(text):
-    """Sterilize input text. Remove proceeding and preeceding spaces, lowercase,
-    and replace spans of multiple spaces with a single space.
-
-    Args:
-        text: text to sterilize
-
-    Returns:
-        sterilized message
-    """
-    return re.sub('\s+', ' ', text.lower().strip())
-def remove_stopwords(tokens, stopwords):
-    """
-    Returns a list of all words in tokens not found in stopwords
-
-    Args:
-        tokens: tokens to remove stopwords from
-        stopwords: path to a stopwords text file. Expects each word on its own line
-
-    Returns:
-        lst with stopwords removed
-    """
-    filtered_list = []
-
-    with open(stopwords, 'r') as f:
-        stopwords_list = [x.strip() for x in f.readlines()]
-        # use a set, lookup is quicker
-        stopwords_set = set(stopwords_list)
-        for word in tokens:
-            if word not in stopwords_set:
-                filtered_list.append(word)
-    return filtered_list
 def weatherAction(message, pyowm_object):
     """Makes the appropriate calls to the OWM API to answer weather queries.
 
@@ -55,7 +24,7 @@ def weatherAction(message, pyowm_object):
     # tokenize input
     tokens = tokenize.wordpunct_tokenize(message)
     # filter stopwords
-    tokens_filtered = remove_stopwords(tokens, '../resources/stopwords.txt')
+    tokens_filtered = remove_stopwords(tokens)
     # join filtered message
     message_filtered = ' '.join(tokens_filtered)
 
@@ -82,6 +51,7 @@ def weatherAction(message, pyowm_object):
         # handle all errors with one error message
         answer = "Request cannot be completed. Try 'weather Toronto, Canada'"
     return answer
+
 def lightsAction(message, philips_bridge):
     """Makes the appropriate calls to the phue API for changing light settings
     based on message and generates a response.
@@ -201,7 +171,7 @@ def lightsAction(message, philips_bridge):
         # tokenize
         tokens = tokenize.wordpunct_tokenize(message)
         # filter stopwords
-        tokens_filtered = remove_stopwords(tokens, '../resources/stopwords.txt')
+        tokens_filtered = remove_stopwords(tokens)
         # join filtered message
         message_filtered = ' '.join(tokens_filtered)
         print("(Highly) processed input: ", message_filtered)
@@ -229,6 +199,7 @@ def lightsAction(message, philips_bridge):
 
     # return final answer
     return answer
+
 def wikipediaAction(message):
     """Makes the appropriate calls to the wikipedia API for answer wiki queries.
 
@@ -242,7 +213,7 @@ def wikipediaAction(message):
     # tokenize input
     tokens = tokenize.wordpunct_tokenize(message)
     # filter stopwords, additionally, remove 'wiki' or 'wikipedia'
-    tokens_filtered = remove_stopwords(tokens, '../resources/stopwords.txt')
+    tokens_filtered = remove_stopwords(tokens)
     tokens_filtered = [token for token in tokens_filtered if token != 'wiki' and token != 'wikipedia']
     # join filtered message
     message = ' '.join(tokens_filtered)
@@ -262,6 +233,7 @@ def wikipediaAction(message):
         answer = "Request was not found using Wikipedia. Be more specific?"
 
     return answer
+
 def get_reply(message, philips_bridge, pyowm_object, wolfram_object):
     """
     This method processes an incoming SMS and makes calls to the appropriate
