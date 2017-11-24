@@ -1,4 +1,5 @@
 [![Coverage Status](https://coveralls.io/repos/github/JohnGiorgi/Alfred/badge.svg?branch=master)](https://coveralls.io/github/JohnGiorgi/Alfred?branch=master)
+[![Build Status](https://travis-ci.org/JohnGiorgi/Alfred.svg?branch=master)](https://travis-ci.org/JohnGiorgi/Alfred)
 
 # Alfred
 
