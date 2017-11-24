@@ -21,35 +21,31 @@ def weatherAction(message, pyowm_object):
     Returns:
         A message answering the weather query
     """
-    # tokenize input
-    tokens = tokenize.wordpunct_tokenize(message)
-    # filter stopwords
-    tokens_filtered = remove_stopwords(tokens)
-    # join filtered message
-    message_filtered = ' '.join(tokens_filtered)
+    # create the spacy doc object
+    doc = get_spacy_doc(message, ['parser', 'tagger'])
+    # get all GPE (geopolitical entity) mentions
+    location_mentions = [ent.text for ent in doc.ents if ent.label_ == 'GPE']
 
-    # for debugging/testing
-    print("(Highly) processed input: ", message_filtered)
+    # attempt to join city/state/country mentions.
+    location = ', '.join(location_mentions)
 
-    # find the word that occurs after weather, looking for a city
-    location = re.findall('\s*weather\s*(\w+)', message_filtered)[0]
     try:
         # this object contains all the methods to get to the data
         observation = pyowm_object.weather_at_place(location)
-        # get the weather object
-        w = observation.get_weather()
-        # get the location object
-        l = observation.get_location()
-        # store the data to return
+        # get the weather and locations objects
+        w, l = observation.get_weather(), observation.get_location()
+        # get location name (according to PyOWM)
         city = l.get_name()
+
+        # extract the data to return
         wind_speed = str(w.get_wind()['speed'])
         temp = str(w.get_temperature('celsius')['temp'])
         status = str(w.get_detailed_status())
-
-        answer = '{} in {}, with a temperature of {}C and winds {}km/h.'.format(status, city, temp, wind_speed)
+        answer = '''{} in {}, with a temperature of {}C and winds {}km/h.'''.format(status.title(), city, temp, wind_speed)
     except:
         # handle all errors with one error message
-        answer = "Request cannot be completed. Try 'weather Toronto, Canada'"
+        answer = "Request cannot be completed. Try 'weather Toronto, Canada (proper capitlization of locations helps me identify them!)'"
+
     return answer
 
 def lightsAction(message, philips_bridge):
@@ -256,22 +252,22 @@ def get_reply(message, philips_bridge, pyowm_object, wolfram_object):
 
     # Look for keyword triggers in the incoming SMS
     ## WEATHER
-    if re.search("weather", message):
+    if re.search("(?i)weather", message):
         if pyowm_object != None:
             answer = weatherAction(message, pyowm_object)
         else:
             answer = "Hmm. It looks like I haven't been setup to answer weather requests. Take a look at the config.ini file!"
     ## WOLFRAM
-    elif re.search("wolfram", message):
+    elif re.search("(?i)wolfram", message,):
         if wolfram_object != None:
             answer = wolframAction(message)
         else:
             answer = "Hmm. It looks like I haven't been setup to answer Wolfram requests. Take a look at the config.ini file!"
     ## WIKI
-    elif re.search("wiki(pedia)?", message):
+    elif re.search("(?i)wiki(pedia)?", message):
         answer = wikipediaAction(message)
     # LIGHTS
-    elif re.search("lamps?|lights?", message):
+    elif re.search("(?i)lamps?|(?i)lights?", message):
         if philips_bridge != None:
             answer = lightsAction(message, philips_bridge)
         else:

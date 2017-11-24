@@ -15,7 +15,7 @@ def sterilize(text):
     Returns:
         sterilized message
     """
-    return re.sub('\s+', ' ', text.lower().strip())
+    return re.sub('\s+', ' ', text.strip())
 
 def remove_stopwords(tokens):
     """
@@ -38,3 +38,43 @@ def remove_stopwords(tokens):
             if word not in stopwords_set:
                 filtered_list.append(word)
     return filtered_list
+
+def load_spacy_model(disable=False):
+    """
+    Returns loaded spacy pipeline
+
+    Args:
+        disable: a list of pipeline components to disable from loaded spacy
+        model. Can signifcantly increase speed.
+
+    Returns:
+        spacy pipeline
+    """
+    # if diable is not false, load spacy model with modified pipeline
+    # otherwise, load the default pipeline
+    if disable:
+        try:
+            nlp = spacy.load('en_core_web_sm', disable=disable)
+        except:
+            print('''[ERROR] You likely pased an invalid disable argument to
+                     get_spacy_doc!''')
+    else:
+        nlp = spacy.load('en_core_web_sm')
+
+    return nlp
+
+
+def get_spacy_doc(message, disable=False):
+    """
+    Returns the doc object obtained by running a spacy model on message.
+
+    Args:
+        message: message for spacy to process
+        disable: a list of pipeline components to disable from loaded spacy
+        model. Can signifcantly increase speed.
+
+    Returns:
+        spacy doc object
+    """
+    nlp = load_spacy_model(disable)
+    return nlp(message)
