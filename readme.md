@@ -1,5 +1,7 @@
-[![Coverage Status](https://coveralls.io/repos/github/JohnGiorgi/Alfred/badge.svg?branch=master)](https://coveralls.io/github/JohnGiorgi/Alfred?branch=master)
 [![Build Status](https://travis-ci.org/JohnGiorgi/Alfred.svg?branch=master)](https://travis-ci.org/JohnGiorgi/Alfred)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/602b339a97574424aad9175a6cf56b9e)](https://app.codacy.com/app/JohnGiorgi/Alfred?utm_source=github.com&utm_medium=referral&utm_content=JohnGiorgi/Alfred&utm_campaign=Badge_Grade_Dashboard)
+[![Coverage Status](https://coveralls.io/repos/github/JohnGiorgi/Alfred/badge.svg?branch=master)](https://coveralls.io/github/JohnGiorgi/Alfred?branch=master)
+
 
 # Alfred
 
