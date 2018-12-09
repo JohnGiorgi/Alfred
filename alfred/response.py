@@ -1,40 +1,40 @@
 import re
-import wikipedia
 
-from phue import Group
 from nltk import tokenize
-from process_input import *
+
+import wikipedia
+from phue import Group
+
+from .process_input import *
+
 # from webcolors import name_to_hex
 
 # (TODO) Figure out a better way to connect with Bridge each time
-# (TODO) Use location of user somehow! https://www.twilio.com/docs/api/twiml/sms/twilio_request
-# (TODO) Ditch using my own NLP processor and use spacy!
 
-def weatherAction(message, pyowm_object):
+def weatherAction(message, nlp, owm):
     """Makes the appropriate calls to the OWM API to answer weather queries.
 
     Args:
-        message: An incoming text message
-        processer: Instance of NLProcessor class
-        pyowm_object: Instance of OWM API object
+        message (str): An incoming text message.
+        nlp: Instance of NLProcessor class
+        owm: Instance of OWM API object
 
     Returns:
-        A message answering the weather query
+        A message answering the weather query.
     """
     # create the spacy doc object
-    doc = get_spacy_doc(message, ['parser', 'tagger'])
+    doc = nlp(message)
     # get all GPE (geopolitical entity) mentions
     location_mentions = [ent.text for ent in doc.ents if ent.label_ == 'GPE']
 
     # attempt to join city/state/country mentions.
     location = ', '.join(location_mentions)
-
     try:
         # this object contains all the methods to get to the data
-        observation = pyowm_object.weather_at_place(location)
+        observation = owm.weather_at_place(location)
         # get the weather and locations objects
         w, l = observation.get_weather(), observation.get_location()
-        # get location name (according to PyOWM)
+        # get location name (according to owm)
         city = l.get_name()
 
         # extract the data to return
@@ -49,15 +49,15 @@ def weatherAction(message, pyowm_object):
     return answer
 
 def lightsAction(message, philips_bridge):
-    """Makes the appropriate calls to the phue API for changing light settings
-    based on message and generates a response.
+    """Makes the appropriate calls to the phue API for changing light settings based on message and
+    generates a response.
 
     Args:
-        message: An incoming text message
-        philips_bridge: Instance of phue API bridge object
+        message (str): An incoming text message.
+        apis['philips_bridge']: Instance of phue API bridge object
 
     Returns:
-        A message indicating what action was taking with the phue API
+        A message indicating what action was taking with the phue API.
     """
     # set default answer to error message
     answer = "Something went wrong..."
@@ -79,18 +79,18 @@ def lightsAction(message, philips_bridge):
 
     # use regex and cascading rules to determine action to take with lights
     # 1) Setting lights to a certain % intensity
-    if re.search("%|percent|dim", message):
-        '''
+    if re.search(r"%|\bpercent\b|\bdim\b", message):
+        """
         Example text:
             - 'dim bedroom lights'
             - 'set lights to 50%'
-        '''
+        """
         # if the word is dim is mentioned, set to 15%
-        if (re.search('dim', message)):
+        if re.search('dim', message):
             intensity = '15'
         # else find the value that directly proceeds '%' or 'percent'
         else:
-            intensity = re.findall('(\w+)\s*(%|percent)\s*', message)[0][0]
+            intensity = re.findall(r'(\w+)\s*(%|percent)\s*', message)[0][0]
         try:
             for l in lights:
                 l.on = True
@@ -101,12 +101,12 @@ def lightsAction(message, philips_bridge):
             answer = 'Something went wrong while trying to change your lights brightness...'
 
     # 2) Turning lights off
-    elif re.search("off", message):
-        '''
+    elif re.search(r"\boff\b", message):
+        """
         Example text:
             - 'turn off the bedroom lights'
             - 'turn off the lights'
-        '''
+        """
         try:
             for l in lights:
                 l.on = False
@@ -114,12 +114,12 @@ def lightsAction(message, philips_bridge):
         except:
             answer = 'Something went wrong while trying to turn your lights off...'
     # 3) Turning lights on
-    elif re.search("on", message):
-        '''
+    elif re.search(r"\bon\b", message):
+        """
         Example text:
             - 'turn on the bedroom lights'
             - 'turn on the lights'
-        '''
+        """
         try:
             for l in lights:
                 l.on = True
@@ -129,16 +129,18 @@ def lightsAction(message, philips_bridge):
         except:
             answer = 'Something went wrong while trying to turn your lights on...'
     # 4) Warming or cooling lights
-    elif re.search("warm|cool", message):
-        '''
+    elif re.search(r"\bwarm\b|\bcool\b", message, re.IGNORECASE):
+        """
         Example text:
             - 'Warm the bedroom lights'
             - 'Cool the lights'
-        '''
+        """
         warmOrCool = ''
         # check if warm or cool was mentioned
-        if re.search('warm', message): warmOrCool = 'Warming'
-        elif re.search('cool', message): warmOrCool = 'Cooling'
+        if re.search(r'warm', message, re.IGNORECASE):
+            warmOrCool = 'Warming'
+        elif re.search(r'cool', message, re.IGNORECASE):
+            warmOrCool = 'Cooling'
         # turn on and then warm or cool lights accordingly
         try:
             for l in lights:
@@ -155,15 +157,14 @@ def lightsAction(message, philips_bridge):
             answer = "{} {}lights...\U0001F4A1".format(warmOrCool, mentioned_room)
         except Exception as exception:
             answer = 'Something went wrong while trying to warm or cool your lights...'
-
     # 5) Change the lights color
     # NOTE THIS IS A BIT OF A HACK, NEEDS TO BE IMPROVED
     else:
-        '''
+        """
         Example text:
             - 'Turn the lights blue'
             - 'Turn the bedroom lights red'
-        '''
+        """
         # tokenize
         tokens = tokenize.wordpunct_tokenize(message)
         # filter stopwords
@@ -172,7 +173,7 @@ def lightsAction(message, philips_bridge):
         message_filtered = ' '.join(tokens_filtered)
         print("(Highly) processed input: ", message_filtered)
         # find the mention of a color name
-        color = re.findall('\s*lights?\s*(\w+)', message_filtered)[0]
+        color = re.findall(r'\s*lights?\s*(\w+)', message_filtered)[0]
         # THIS IS A TEMPORARY HACK
         colors = {
             'blue': 40000,
@@ -180,7 +181,7 @@ def lightsAction(message, philips_bridge):
             'green': 30000,
             'orange': 4000,
             'pink': 60000,
-            'purple': 50000
+            'purple': 50000,
         }
         try:
             for l in lights:
@@ -192,7 +193,6 @@ def lightsAction(message, philips_bridge):
             answer = "Turning {}lights {}...\U0001F4A1".format(mentioned_room, color)
         except:
             answer = 'Something went wrong while trying to change the color of yours lights...'
-
     # return final answer
     return answer
 
@@ -200,17 +200,18 @@ def wikipediaAction(message):
     """Makes the appropriate calls to the wikipedia API for answer wiki queries.
 
     Args:
-        message: An incoming text message
-        processer: Instance of NLProcessor class
+        message (str): An incoming text message.
 
     Returns:
-        A message indicating what action was taking with the wikipedia API
+        A message indicating what action was taking with the wikipedia API.
     """
+    message = sterilize(message)
     # tokenize input
     tokens = tokenize.wordpunct_tokenize(message)
     # filter stopwords, additionally, remove 'wiki' or 'wikipedia'
     tokens_filtered = remove_stopwords(tokens)
-    tokens_filtered = [token for token in tokens_filtered if token != 'wiki' and token != 'wikipedia']
+    tokens_filtered = [token for token in tokens_filtered
+                       if token.lower() != 'wiki' and token.lower() != 'wikipedia']
     # join filtered message
     message = ' '.join(tokens_filtered)
 
@@ -230,21 +231,21 @@ def wikipediaAction(message):
 
     return answer
 
-def get_reply(message, philips_bridge, pyowm_object, wolfram_object):
+def wolframAction():
+    pass
+
+def get_reply(message, nlp, apis):
     """
     This method processes an incoming SMS and makes calls to the appropriate
     APIs via other methods.
 
     Args:
-        message: An incoming text message
-        location: Location the request was sent from based on phone number
-        processer: Instance of NLProcessor class
-        philips_bridge: Instance of phue API bridge object
-        pyowm_object: Instance of OWM API object
+        message (str): An incoming text message.
+        apis (dict): A dictionary containing any API objects we need to generate replies.
+        nlp: Instance of Spacy NLP object.
 
     Returns:
-        A response to message either answering a request or indicating what
-        actions were taken
+        A response to message either answering a request or indicating what actions were taken.
     """
     ## TEXT PREPROCESSING
     message = sterilize(message)
@@ -252,28 +253,31 @@ def get_reply(message, philips_bridge, pyowm_object, wolfram_object):
 
     # Look for keyword triggers in the incoming SMS
     ## WEATHER
-    if re.search("(?i)weather", message):
-        if pyowm_object != None:
-            answer = weatherAction(message, pyowm_object)
+    if re.search(r'\b(?i)weather\b', message):
+        if apis['owm'] != None:
+            print('here')
+            answer = weatherAction(message, nlp, apis['owm'])
         else:
             answer = "Hmm. It looks like I haven't been setup to answer weather requests. Take a look at the config.ini file!"
     ## WOLFRAM
     elif re.search("(?i)wolfram", message,):
-        if wolfram_object != None:
+        if apis['wolfram'] != None:
             answer = wolframAction(message)
         else:
             answer = "Hmm. It looks like I haven't been setup to answer Wolfram requests. Take a look at the config.ini file!"
     ## WIKI
-    elif re.search("(?i)wiki(pedia)?", message):
+    elif re.search(r'(?i)wiki(pedia)?', message):
         answer = wikipediaAction(message)
     # LIGHTS
-    elif re.search("(?i)lamps?|(?i)lights?", message):
-        if philips_bridge != None:
-            answer = lightsAction(message, philips_bridge)
+    elif re.search(r'(?i)lamps?|(?i)lights?', message):
+        if apis['philips_bridge'] != None:
+            answer = lightsAction(message, apis['philips_bridge'])
         else:
             answer = "Hmm. It looks like I haven't been setup to work with your Hue lights. Take a look at the config.ini file!"
     # the message contains no keywords. Display help prompt
     else:
-        answer = '''\nStuck? Here are some things you can ask me:\n\n'wolfram' {a question}\n'wiki' {wikipedia request}\n'weather' {place}\n'turn lights off'\n\nNote: some of these features require additional setup.'''
+        answer = ("\nStuck? Here are some things you can ask me:\n\n'wolfram' "
+                  "{a question}\n'wiki' {wikipedia request}\n'weather' {place}\n'turn lights off'\n"
+                  "\nNote: some of these features require additional setup.")
     # return the formulated answer
     return answer

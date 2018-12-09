@@ -1,51 +1,42 @@
-import sys
-import time
-import pyowm
-import argparse
 import configparser
+import time
 
+import en_core_web_md
+import pyowm
 from phue import Bridge
-from bin.testingAlfred import testing
 
-def initial_setup():
+
+def load_spacy_model():
+    print('[INFO] Loading NLP model...')
+    return en_core_web_md.load()
+
+def initial_setup(config, guided_setup=False):
     """Initial setup to be called when Alfred Flask app is run"""
 
     # (TODO) Should not respond to numbers it does not recognize
     # (TODO) Complete action for one light when light name is mentioned
-    # (TODO) Testing script should be unique
 
     # add <number>:<name> key pair values to have Alfred respond using your name
     # callers = {}
-
     print('[INFO] Setting up...')
-
-    # parse and store command line arguments
-    arguments = parse_args()
 
     ## SETUP
     # if setup flag is passed, run guided setup loop
-    if arguments.setup:
+    if guided_setup:
         guided_setup()
-        # terminate script after setup
-        sys.exit
 
     # parse and store config file
-    config = configurations(arguments.config)
+    config = configurations(config)
 
     ## PHILIPS HUE
     hue_config = config['lights']
     if hue_config['bridgeIP'] != 'None':
         # create the Bridge object with correct IP
-        print('[INFO] Connecting to Philips Hue Bridge with IP {}...'.format(hue_config['bridgeIP']))
+        print("[INFO] Make sure you have pressed the button on the Hue Bridge within 30 seconds of running this script!")
+        print('[INFO] Connecting to Philips Hue Bridge with IP {}'.format(hue_config['bridgeIP']))
         philips_bridge = Bridge(hue_config['bridgeIP'])
         # warn user about connect process with hub
-        if arguments.connectBridge:
-            philips_bridge = Bridge()
-            print("""
-            [INFO] Make sure you have pressed the button on the Hue Bridge
-            within 30 seconds of running this script...\n
-            [INFO] Your bridge ip is {}
-            """.format(philips_bridge.get_ip_address()))
+        print("[INFO] Your bridge ip is {}".format(philips_bridge.get_ip_address()))
     else:
         philips_bridge = None
 
@@ -55,15 +46,10 @@ def initial_setup():
     ## WEATHER
     weather_config = config['weather']
     if weather_config['OWMKey'] != 'None':
-        print('[INFO] Setting up pyowm with API key {}...'.format(weather_config['OWMKey']))
+        print('[INFO] Setting up pyowm with API key {}'.format(weather_config['OWMKey']))
         owm = pyowm.OWM(weather_config['OWMKey'])
     else:
         owm = None
-
-    ## TESTING
-    # if test flag is passed, run a test loop
-    if arguments.test:
-        testing(philips_bridge, owm, wolfram)
 
     return philips_bridge, owm, wolfram
 
@@ -75,44 +61,6 @@ def configurations(path):
     # read config
     config.read(path)
     return config
-
-def parse_args():
-    """
-    This method creates an ArgumentParser object, creates and defines all
-    arguments to be used by run_sms_bot.py, and returns all captured
-    arguments as an argparse object"""
-
-    ## create parser
-    parser = argparse.ArgumentParser(description='''Run Alfred, a simple
-    Flask app which recieves messages sent to a Twilio number and returns
-    a response back to the sender. This app interacts with other APIs
-    such as the Philips Hues API, WolframAlpha API, and OWM API in order
-    to carry out actions.''')
-
-    ## add arguments
-    # --config
-    parser.add_argument('--config', metavar = '<configuration file>',
-    type = str, help = '''Enter the path to the configuration file. Default is
-    at src/config.ini''', default = 'config.ini')
-    # --connectBridge
-    parser.add_argument('--connectBridge', action = 'store_true', help = '''If
-    you intend to use the script with you Hue Bridge, set this to True when you
-    run the script for the first time''', default = False)
-    # --test
-    parser.add_argument('--test', action = 'store_true', help = '''Pass this flag
-    in order to run a testing loop which allows you to enter text to Alfred from the
-    command line''', default = False)
-    # --setup
-    parser.add_argument('--setup', action = 'store_true', help = '''Pass this flag
-    in order to run a guided setup with Alfred''', default = False)
-
-    try:
-        arguments = parser.parse_args()
-    except:
-        parser.print_help()
-        sys.exit(0)
-
-    return arguments
 
 def guided_setup():
     # (TODO): Need to update the config file with the bridgeIP
